@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Firebase CRUD - Username & Email</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    form {
+      max-width: 400px;
+      margin: 0 auto 20px auto;
+      padding: 20px;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 10px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 10px;
+      width: 100%;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    td button {
+      padding: 5px 10px;
+      margin: 0 2px;
+      font-size: 12px;
+      width: auto;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Update button styles */
+    .actions button:first-child {
+      background-color: #28a745; /* Green color */
+    }
+
+    .actions button:first-child:hover {
+      background-color: #218838; /* Darker green on hover */
+    }
+
+    /* Delete button styles */
+    .actions button:last-child {
+      background-color: #dc3545; /* Red color */
+    }
+
+    .actions button:last-child:hover {
+      background-color: #c82333; /* Darker red on hover */
+    }
+  </style>
+</head>
+<body>
+  <h2>User Management System</h2>
+
+  <form id="userForm">
+    <input type="text" id="username" placeholder="Enter username" required />
+    <input type="email" id="email" placeholder="Enter email" required />
+    <button type="submit">Add User</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="userTableBody">
+      <!-- User data will appear here -->
+    </tbody>
+  </table>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    // Import Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDsOA4c-LvoBOXphnAvkQtLFIu9MxlBjPM",
+      authDomain: "dbms-nosql-c1661.firebaseapp.com",
+      projectId: "dbms-nosql-c1661",
+      storageBucket: "dbms-nosql-c1661.firebasestorage.app",
+      messagingSenderId: "945557023741",
+      appId: "1:945557023741:web:1394b714892ea019b30794",
+      measurementId: "G-RWJRFG1SLX"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const userCollection = collection(db, "users");
+
+    const form = document.getElementById("userForm");
+    const usernameInput = document.getElementById("username");
+    const emailInput = document.getElementById("email");
+    const tableBody = document.getElementById("userTableBody");
+
+    // Read users
+    async function loadUsers() {
+      tableBody.innerHTML = "";
+      const snapshot = await getDocs(userCollection);
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+          <td><input type="text" value="${data.username}" data-id="${docSnap.id}" class="username-field" /></td>
+          <td><input type="email" value="${data.email}" data-id="${docSnap.id}" class="email-field" /></td>
+          <td class="actions">
+            <button onclick="updateUser('${docSnap.id}')">Update</button>
+            <button onclick="deleteUser('${docSnap.id}')">Delete</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Create user
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = usernameInput.value.trim();
+      const email = emailInput.value.trim();
+      if (username && email) {
+        await addDoc(userCollection, { username, email });
+        form.reset();
+        loadUsers();
+      }
+    });
+
+    // Update user
+    window.updateUser = async (id) => {
+      const usernameField = document.querySelector(`input.username-field[data-id="${id}"]`);
+      const emailField = document.querySelector(`input.email-field[data-id="${id}"]`);
+      const updatedData = {
+        username: usernameField.value,
+        email: emailField.value,
+      };
+      const userDoc = doc(db, "users", id);
+      await updateDoc(userDoc, updatedData);
+      loadUsers();
+    };
+
+    // Delete user
+    window.deleteUser = async (id) => {
+      const userDoc = doc(db, "users", id);
+      await deleteDoc(userDoc);
+      loadUsers();
+    };
+
+    // Initial load
+    loadUsers();
+  </script>
+</body>
+</html>
